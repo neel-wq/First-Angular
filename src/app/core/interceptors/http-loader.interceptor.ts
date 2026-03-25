@@ -30,13 +30,6 @@ export class HttpLoaderInterceptor implements HttpInterceptor {
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {
         console.error('HTTP Error:', error);
-        if (shouldShowLoader) {
-          this.completedRequests++;
-          if (this.completedRequests >= this.totalRequests) {
-            this.loaderService.hide();
-            this.resetCounters();
-          }
-        }
         return throwError(() => error);
       }),
       finalize(() => {

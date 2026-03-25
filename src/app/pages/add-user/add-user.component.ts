@@ -293,7 +293,9 @@ export class AddUserComponent implements OnInit, OnDestroy {
           this.resetForm();
           // Navigate to users page after 1 second
           setTimeout(() => {
-            this.router.navigate(['/users']);
+            this.router.navigate(['/users'], {
+              state: { createdUser: response }
+            });
           }, 1000);
         },
         (error) => {

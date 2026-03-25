@@ -87,7 +87,7 @@ import { NgxEchartsModule } from 'ngx-echarts';
       }
 
       .stats-grid {
-        cols: 2 !important;
+        grid-template-columns: repeat(2, 1fr) !important;
       }
     }
 

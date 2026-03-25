@@ -1,7 +1,7 @@
-import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
+import { Component, OnInit, ViewChild, OnDestroy, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,6 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { Router } from '@angular/router';
 import { User, TableState } from '@core/models';
 import { ApiService } from '@core/services/api.service';
 
@@ -189,8 +190,8 @@ import { ApiService } from '@core/services/api.service';
     }
   `]
 })
-export class UsersComponent implements OnInit, OnDestroy {
-  @ViewChild('paginator') paginator: any;
+export class UsersComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   users: User[] = [];
   dataSource: MatTableDataSource<User>;
@@ -207,12 +208,19 @@ export class UsersComponent implements OnInit, OnDestroy {
     sortDirection: 'asc'
   };
 
-  constructor(private apiService: ApiService) {
+  constructor(private apiService: ApiService, private router: Router) {
     this.dataSource = new MatTableDataSource(this.users);
   }
 
   ngOnInit(): void {
-    this.loadUsers();
+    const navigation = this.router.getCurrentNavigation();
+    const createdUser = navigation?.extras?.state?.['createdUser'] as User | undefined;
+    this.loadUsers(createdUser);
+  }
+
+  ngAfterViewInit(): void {
+    // Enable client-side paging for MatTableDataSource
+    this.dataSource.paginator = this.paginator;
   }
 
   ngOnDestroy(): void {
@@ -220,14 +228,20 @@ export class UsersComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  loadUsers(): void {
+  loadUsers(optimisticUser?: User): void {
     this.isLoading = true;
     this.apiService.getUsers()
       .pipe(takeUntil(this.destroy$))
       .subscribe(
         (data: User[]) => {
           this.users = data;
-          this.dataSource.data = data;
+          if (optimisticUser) {
+            const alreadyExists = this.users.some(u => u.id === optimisticUser.id);
+            if (!alreadyExists) {
+              this.users = [optimisticUser, ...this.users];
+            }
+          }
+          this.dataSource.data = this.users;
           this.isLoading = false;
         },
         (error) => {
