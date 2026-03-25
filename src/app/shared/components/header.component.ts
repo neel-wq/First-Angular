@@ -33,7 +33,7 @@ import { ThemeService } from '@core/services/theme.service';
           <mat-icon>{{ (isDarkMode$ | async) ? 'dark_mode' : 'light_mode' }}</mat-icon>
         </mat-slide-toggle>
         
-        <button mat-icon-button [matMenuTriggerFor]="userMenu">
+        <button mat-icon-button>
           <mat-icon>account_circle</mat-icon>
         </button>
       </div>

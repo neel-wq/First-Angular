@@ -53,7 +53,7 @@ export class HttpLoaderInterceptor implements HttpInterceptor {
 
   private isExemptFromLoader(url: string): boolean {
     // Add URLs that should not trigger loader
-    const exemptUrls = [
+    const exemptUrls: string[] = [
       // Add any exempted URLs here
     ];
     return exemptUrls.some(exemptUrl => url.includes(exemptUrl));

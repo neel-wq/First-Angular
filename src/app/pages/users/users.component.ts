@@ -35,6 +35,9 @@ import { ApiService } from '@core/services/api.service';
         <mat-card-header>
           <mat-card-title>Users List</mat-card-title>
           <mat-card-subtitle>{{ users.length }} users found</mat-card-subtitle>
+          <button mat-icon-button (click)="loadUsers()" matTooltip="Refresh users list" class="refresh-btn">
+            <mat-icon>refresh</mat-icon>
+          </button>
         </mat-card-header>
 
         <mat-card-content>
@@ -114,6 +117,17 @@ import { ApiService } from '@core/services/api.service';
     .users-card {
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    mat-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .refresh-btn {
+      margin-left: auto;
     }
 
     .table-wrapper {

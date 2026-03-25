@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ApiService } from '@core/services/api.service';
@@ -226,7 +227,8 @@ export class AddUserComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private apiService: ApiService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -289,6 +291,10 @@ export class AddUserComponent implements OnInit, OnDestroy {
             panelClass: ['success-snackbar']
           });
           this.resetForm();
+          // Navigate to users page after 1 second
+          setTimeout(() => {
+            this.router.navigate(['/users']);
+          }, 1000);
         },
         (error) => {
           this.isSubmitting = false;
