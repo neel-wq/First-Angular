@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-node scripts/auto-log-commit.cjs
+node scripts/auto-log-commit.cjs --hook pre-commit
 status=$?
 
 if [ $status -ne 0 ]; then
