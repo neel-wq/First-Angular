@@ -11,6 +11,32 @@ const readmeTodayPath = path.join(repoRoot, 'readme_today.md');
 const logPath = path.join(repoRoot, 'README_TODAY_CHANGES.md');
 const automationDocPath = path.join(repoRoot, 'CHANGE_LOG_AUTOMATION.md');
 
+function parseArgs(argv) {
+  const parsed = { hook: 'pre-commit', messageFile: '', messageText: '' };
+
+  for (let i = 2; i < argv.length; i += 1) {
+    const token = argv[i];
+    if (token === '--hook' && argv[i + 1]) {
+      parsed.hook = argv[i + 1];
+      i += 1;
+      continue;
+    }
+
+    if (token === '--message-file' && argv[i + 1]) {
+      parsed.messageFile = argv[i + 1];
+      i += 1;
+      continue;
+    }
+
+    if (token === '--message' && argv[i + 1]) {
+      parsed.messageText = argv[i + 1];
+      i += 1;
+    }
+  }
+
+  return parsed;
+}
+
 function runGit(args) {
   const result = spawnSync('git', args, {
     cwd: repoRoot,
@@ -96,6 +122,9 @@ Each entry must follow this structure:
 **What Changed:**
 - Brief description of the modification
 
+**Commit Message:**
+- Exact user commit comment/message
+
 **Purpose:**
 - Why the change was made
 
@@ -129,6 +158,9 @@ Each entry must follow this structure:
 **What Changed:**
 - Fixed Enter key triggering multiple popups in payment row action
 
+**Commit Message:**
+- fix(payment): prevent duplicate popup on Enter key
+
 **Purpose:**
 - Prevent duplicate popup creation on rapid key press
 
@@ -157,9 +189,10 @@ Follow rule.md for entry structure and quality.
 
 ## How It Runs
 1. Developer stages files.
-2. Git pre-commit hook runs scripts/auto-log-commit.cjs.
-3. The script appends a structured entry to README_TODAY_CHANGES.md.
-4. The script force-adds README_TODAY_CHANGES.md to the commit.
+2. Git pre-commit hook runs scripts/auto-log-commit.cjs in prepare mode.
+3. Git commit-msg hook runs scripts/auto-log-commit.cjs in log mode.
+4. The script appends a structured entry to README_TODAY_CHANGES.md including commit message.
+5. The script force-adds required markdown to the commit.
 
 ## Team Benefit
 - Consistent daily traceability across all developers
@@ -186,16 +219,18 @@ The project enforces commit-time change logging so no meaningful code, config, o
 ## How It Works
 1. Each developer runs npm install (or npm run changelog:setup) after pulling latest changes.
 2. Setup script configures repository hooks path to .githooks.
-3. On every commit, .githooks/pre-commit runs scripts/auto-log-commit.cjs.
-4. Script auto-ensures baseline docs exist (rule.md, readme_today.md, README_TODAY_CHANGES.md).
-5. Script appends a structured log block to README_TODAY_CHANGES.md.
-6. Since all markdown files are ignored by design, script uses git add -f so commit capture does not fail.
+3. On every commit, .githooks/pre-commit runs scripts/auto-log-commit.cjs --hook pre-commit.
+4. On every commit, .githooks/commit-msg runs scripts/auto-log-commit.cjs --hook commit-msg --message-file <path>.
+5. Script auto-ensures baseline docs exist (rule.md, readme_today.md, README_TODAY_CHANGES.md).
+6. Script appends a structured log block to README_TODAY_CHANGES.md including the exact commit message.
+7. Since all markdown files are ignored by design, script uses git add -f so commit capture does not fail.
 
 ## What Output Looks Like
 Per commit, one entry is appended with:
 - Timestamp (local system time)
 - Files changed + status + line stats
 - What changed
+- Commit message entered by developer
 - Purpose
 - Validation
 - Caution
@@ -223,7 +258,30 @@ function forceAddMarkdownFiles(filePaths) {
   runGit(['add', '-f', '--', ...normalized]);
 }
 
+function loadCommitMessage(messageFile, messageText) {
+  if (messageText && messageText.trim()) {
+    return messageText.trim();
+  }
+
+  if (messageFile && fs.existsSync(messageFile)) {
+    const raw = fs.readFileSync(messageFile, 'utf8');
+    const cleaned = raw
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('#'))
+      .join(' ')
+      .trim();
+
+    if (cleaned) {
+      return cleaned;
+    }
+  }
+
+  return 'N/A';
+}
+
 function main() {
+  const args = parseArgs(process.argv);
   const { ruleTemplate, todayTemplate, logTemplate, automationTemplate } = loadTemplateContent();
 
   // Why: create required policy/docs automatically so every clone has the same baseline.
@@ -263,9 +321,22 @@ function main() {
     process.exit(0);
   }
 
+  // Why: pre-commit prepares/stages required markdown; commit-msg appends final log with user commit text.
+  if (args.hook === 'pre-commit') {
+    forceAddMarkdownFiles([
+      'rule.md',
+      'readme_today.md',
+      'CHANGE_LOG_AUTOMATION.md',
+      ...stagedMarkdownFiles,
+    ]);
+    process.exit(0);
+  }
+
+  const commitMessage = loadCommitMessage(args.messageFile, args.messageText);
+
   const digest = crypto
     .createHash('sha1')
-    .update(JSON.stringify(files))
+    .update(JSON.stringify({ files, commitMessage }))
     .digest('hex');
 
   const currentLog = fs.readFileSync(logPath, 'utf8');
@@ -294,11 +365,14 @@ function main() {
     '**What Changed:**',
     '- Automated commit snapshot of currently staged files.',
     '',
+    '**Commit Message:**',
+    `- ${commitMessage}`,
+    '',
     '**Purpose:**',
     '- Preserve reliable team-level traceability without depending on manual logging.',
     '',
     '**Validation:**',
-    '- Pre-commit hook executed and appended this entry before commit.',
+    '- commit-msg hook captured commit text and appended this entry before commit finalization.',
     '',
     '**Caution (if any):**',
     '- Review generated summary before pushing, especially for large refactors.',

@@ -9,10 +9,11 @@ Automatically record meaningful repository changes from all developers in a cons
 
 ## Automatic Flow
 1. Developer makes changes and stages files.
-2. During commit, the pre-commit hook runs scripts/auto-log-commit.cjs.
-3. The script ensures rule.md and readme_today.md exist.
-4. The script appends a structured markdown entry to README_TODAY_CHANGES.md.
-5. The script force-adds required markdown (`git add -f`) so commit does not fail because markdown files are ignored.
+2. During commit, pre-commit runs scripts/auto-log-commit.cjs in prepare mode.
+3. During commit, commit-msg runs scripts/auto-log-commit.cjs in log mode and reads user commit text.
+4. The script ensures rule.md and readme_today.md exist.
+5. The script appends a structured markdown entry to README_TODAY_CHANGES.md including commit message.
+6. The script force-adds required markdown (`git add -f`) so commit does not fail because markdown files are ignored.
 
 ## Setup Commands
 Run once per clone:
@@ -27,6 +28,7 @@ Each commit generates one block with:
 - Local timestamp
 - Files changed with status and +/- line stats
 - What Changed
+- Commit Message
 - Purpose
 - Validation
 - Caution

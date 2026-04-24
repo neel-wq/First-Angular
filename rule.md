@@ -28,6 +28,9 @@ Each entry must follow this structure:
 **What Changed:**
 - Brief description of the modification
 
+**Commit Message:**
+- Exact user commit comment/message
+
 **Purpose:**
 - Why the change was made
 
@@ -60,6 +63,9 @@ Each entry must follow this structure:
 
 **What Changed:**
 - Fixed Enter key triggering multiple popups in payment row action
+
+**Commit Message:**
+- fix(payment): prevent duplicate popup on Enter key
 
 **Purpose:**
 - Prevent duplicate popup creation on rapid key press
