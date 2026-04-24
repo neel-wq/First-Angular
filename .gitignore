@@ -48,3 +48,6 @@ Thumbs.db
 
 # IDE
 *.code-workspace
+
+# All markdown is ignored by default; commit hook force-adds required markdown files.
+*.md

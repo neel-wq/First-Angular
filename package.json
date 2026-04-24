@@ -8,7 +8,10 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "lint": "ng build --configuration development"
+    "lint": "ng build --configuration development",
+    "prepare": "node scripts/setup-git-hooks.cjs",
+    "changelog:setup": "node scripts/setup-git-hooks.cjs",
+    "changelog:run": "node scripts/auto-log-commit.cjs"
   },
   "private": true,
   "dependencies": {
